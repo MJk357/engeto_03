@@ -1,0 +1,1 @@
+Zde musí být popis projektu, viz např., video v zadání
