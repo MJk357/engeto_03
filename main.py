@@ -36,6 +36,8 @@ def vrat_pocet_hlasu_obce(adresa: str) -> dict:
     """
     rozdelene_html = bs(get(adresa).text, features="html.parser")
     tabulka = rozdelene_html.select_one('div #publikace table')
+    print(adresa)
+    print(tabulka)
     registered = tabulka.find("td", attrs={"headers": "sa2"}).text
     envelopes = tabulka.find("td", attrs={"headers": "sa3"}).text
     valid = tabulka.find("td", attrs={"headers": "sa6"}).text
@@ -60,7 +62,7 @@ def seznam_stran(rozdelene_html: bs):
     tabulka_1.extend(tabulka_2)
     cislo_strana = tabulka_1.select("tr > td:nth-child(1), tr > td:nth-child(2)")
     vysledek = dict(map(lambda i: (cislo_strana[i].text, cislo_strana[i + 1].text), range(len(cislo_strana) - 1)[::2]))
-    vysledek.pop("-")
+    vysledek.pop("-", None)
     seznam_vsech_stran.update(vysledek)
     return()
 
@@ -75,7 +77,7 @@ def vrat_vysledky_obce(rozdelene_html: bs) -> dict:
     tabulka_1.extend(tabulka_2)
     cislo_pocet_hlasu = tabulka_1.select("tr > td:nth-child(1), tr > td:nth-child(3)")
     vysledek = dict(map(lambda i: (cislo_pocet_hlasu[i].text, cislo_pocet_hlasu[i + 1].text), range(len(cislo_pocet_hlasu) - 1)[::2]))
-    vysledek.pop("-")
+    vysledek.pop("-", None)
     return(vysledek)
 
 def vrat_volebni_vysledky_uzemniho_celku(adresa: str) -> list:
@@ -90,17 +92,27 @@ def vrat_volebni_vysledky_uzemniho_celku(adresa: str) -> list:
     rozdelene_html = bs(get(adresa).text, features="html.parser")
     tabulky = rozdelene_html.select("table > tr")
     for radek in tabulky:
-        cislo = radek.find("td", {"class": "cislo"})
-        nazev = radek.find("td", {"class": "overflow_name"})
+        #cislo = radek.find("td", {"class": "cislo"})
+        cislo = radek.select_one("td:nth-of-type(1)")
+        #nazev = radek.find("td", {"class": "overflow_name"})
+        nazev = radek.select_one("td:nth-of-type(2)")
         if cislo and nazev is not None:
+            if (cislo.text or nazev.text) == '-':
+                continue
             seznam_celku.append([cislo.text, nazev.text, "https://volby.cz/pls/ps2017nss/" + cislo.a['href']])
     # vysledky pro jednotlive obce
-    a = 0
     for celek in seznam_celku:
-        vysledek_obce = vrat_pocet_hlasu_obce(celek[2])
-        pomocna = {"code": celek[0], "location": celek[1]}
-        pomocna.update(vysledek_obce)
-        vysledek.append(pomocna)
+            try:
+                vysledek_obce = vrat_pocet_hlasu_obce(celek[2])
+            except requests.exceptions.ConnectionError:
+                print("Chyba připojení")
+                exit()
+            except requests.exceptions.SSLError as e_ssl:
+                print("Max retries exceeded")
+                exit()
+            pomocna = {"code": celek[0], "location": celek[1]}
+            pomocna.update(vysledek_obce)
+            vysledek.append(pomocna)
     return(vysledek)
 
 def zapis_vysledky_do_csv(vysledky: list, soubor: str):
@@ -127,15 +139,32 @@ def zapis_vysledky_do_csv(vysledky: list, soubor: str):
         csvwriter.writerows(radky)
     return()
 
-filename = "records.csv"
-hlavni_odkaz = 'https://volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=12&xnumnuts=7103'
+
+#filename = sys.argv[2]
+#hlavni_odkaz = sys.argv[1]
 
 
-if len(sys.argv) != 2:
-    print(
-        "Pro spuštění chybí argument 'jmeno',",
-        "Zapiš: python povinny_argument.py 'jmeno'", sep="\n"
-    )
-else:
-    volebni_vysledky = vrat_volebni_vysledky_uzemniho_celku(hlavni_odkaz)
-    zapis_vysledky_do_csv(volebni_vysledky, filename)
+# if len(sys.argv) != 3:
+#     print(
+#         "Pro spuštění chybí argument 'http_uzemniho_celku' a 'jmeno_souboru',",
+#         "Zapiš: python main.py 'https://...' 'vysledky.csv'", sep="\n"
+#     )
+# else:
+#     volebni_vysledky = vrat_volebni_vysledky_uzemniho_celku(hlavni_odkaz)
+#     zapis_vysledky_do_csv(volebni_vysledky, filename)
+
+
+# hlavni_odkaz = 'https://volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=12&xnumnuts=7103'
+# filename = "records_PRST.csv"
+# volebni_vysledky = vrat_volebni_vysledky_uzemniho_celku(hlavni_odkaz)
+# zapis_vysledky_do_csv(volebni_vysledky, filename)
+
+# hlavni_odkaz = 'https://volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=10&xnumnuts=6105'
+# filename = "records_ZR.csv"
+# volebni_vysledky = vrat_volebni_vysledky_uzemniho_celku(hlavni_odkaz)
+# zapis_vysledky_do_csv(volebni_vysledky, filename)
+
+hlavni_odkaz = 'https://volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=11&xnumnuts=6202'
+filename = "records_BRm.csv"
+volebni_vysledky = vrat_volebni_vysledky_uzemniho_celku(hlavni_odkaz)
+zapis_vysledky_do_csv(volebni_vysledky, filename)
