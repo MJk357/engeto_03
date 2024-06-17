@@ -36,8 +36,6 @@ def vrat_pocet_hlasu_obce(adresa: str) -> dict:
     """
     rozdelene_html = bs(get(adresa).text, features="html.parser")
     tabulka = rozdelene_html.select_one('div #publikace table')
-    print(adresa)
-    print(tabulka)
     registered = tabulka.find("td", attrs={"headers": "sa2"}).text
     envelopes = tabulka.find("td", attrs={"headers": "sa3"}).text
     valid = tabulka.find("td", attrs={"headers": "sa6"}).text
@@ -140,31 +138,20 @@ def zapis_vysledky_do_csv(vysledky: list, soubor: str):
     return()
 
 
-#filename = sys.argv[2]
-#hlavni_odkaz = sys.argv[1]
+filename = sys.argv[2]
+hlavni_odkaz = sys.argv[1]
 
 
-# if len(sys.argv) != 3:
-#     print(
-#         "Pro spuštění chybí argument 'http_uzemniho_celku' a 'jmeno_souboru',",
-#         "Zapiš: python main.py 'https://...' 'vysledky.csv'", sep="\n"
-#     )
-# else:
-#     volebni_vysledky = vrat_volebni_vysledky_uzemniho_celku(hlavni_odkaz)
-#     zapis_vysledky_do_csv(volebni_vysledky, filename)
+if len(sys.argv) != 3:
+    print(
+        "Pro spuštění chybí argument 'http_uzemniho_celku' a 'jmeno_souboru',",
+        "Zapiš: python main.py 'https://...' 'vysledky.csv'", sep="\n"
+    )
+else:
+  print(f"STAHUJI DATA Z VYBRANEHO URL: {hlavni_odkaz}")
+  volebni_vysledky = vrat_volebni_vysledky_uzemniho_celku(hlavni_odkaz)
+  print(f"UKLADAM DO SOUBORU: {filename}")
+  zapis_vysledky_do_csv(volebni_vysledky, filename)
+  print(f"UKONCUJI election-scraper")
 
 
-# hlavni_odkaz = 'https://volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=12&xnumnuts=7103'
-# filename = "records_PRST.csv"
-# volebni_vysledky = vrat_volebni_vysledky_uzemniho_celku(hlavni_odkaz)
-# zapis_vysledky_do_csv(volebni_vysledky, filename)
-
-# hlavni_odkaz = 'https://volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=10&xnumnuts=6105'
-# filename = "records_ZR.csv"
-# volebni_vysledky = vrat_volebni_vysledky_uzemniho_celku(hlavni_odkaz)
-# zapis_vysledky_do_csv(volebni_vysledky, filename)
-
-hlavni_odkaz = 'https://volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=11&xnumnuts=6202'
-filename = "records_BRm.csv"
-volebni_vysledky = vrat_volebni_vysledky_uzemniho_celku(hlavni_odkaz)
-zapis_vysledky_do_csv(volebni_vysledky, filename)
