@@ -1,4 +1,3 @@
-# https://volby.cz/pls/ps2017nss/ps311?xjazyk=CZ&xkraj=12&xnumnuts=7103
 """
 main.py: třetí projekt do Engeto Online Python Akademie
 
